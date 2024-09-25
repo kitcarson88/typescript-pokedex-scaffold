@@ -1,15 +1,12 @@
 import { Request, Response, Router } from "express";
-import { configuration } from "../constants";
 import { PokemonFacade } from "../facades/pokemon.facade";
 import { HttpError } from "../models/enum/http-errors.enum";
 import { wsMirroringRepository } from "../repositories/ws-mirroring.repository";
+import { cache } from "../services/cache";
 import { logger } from "../services/logger";
 import { endpoint, hostBaseUrl } from "../utils/http-utils";
 
-const NodeCache = require('node-cache');
-
 const router = Router();
-const cache = new NodeCache({ stdTTL: configuration.CACHE_TIMEOUT * 60 });
 const pokemonFacade = new PokemonFacade();
 
 router.get("/pokemon", async (req: Request, res: Response) => {
