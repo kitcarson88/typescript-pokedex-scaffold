@@ -3,3 +3,7 @@ export const configuration = {
   CACHE_TIMEOUT: 10, // Cache timeout in minutes
   LOGGER_DATE_FORMAT: "DD-MM-YYYY HH:mm:ss Z",
 };
+
+export const endpoints = {
+  POKEMON: "pokemon"
+};

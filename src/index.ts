@@ -1,6 +1,8 @@
 // src/index.js
 import dotenv from "dotenv";
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
+import { createProxyMiddleware } from "http-proxy-middleware";
+import overridedRoutes from "./api/overrides.api";
 import { logger, logRequestAndResponse } from "./services/logger";
 
 const morgan = require("morgan");
@@ -26,8 +28,20 @@ app.use(
 );
 /*************************************************/
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Express + TypeScript Server");
+app.use(express.json());
+app.use("/", overridedRoutes);
+
+const envProxy = createProxyMiddleware({
+  target: process.env.POKEAPI_URL,
+  changeOrigin: true,
+  ws: true,
+});
+app.use("/", envProxy);
+
+app.use((err: any, _req: any, res: any, next: any) => {
+  logger.error("Internal Server Error");
+  res.status(err.status || 500).send("Internal Server Error");
+  next();
 });
 
 app.listen(port, () => {
