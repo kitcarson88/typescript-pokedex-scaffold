@@ -1,15 +1,12 @@
 import { Request, Response, Router } from "express";
-import { configuration } from "../constants";
 import { PokemonFacade } from "../facades/pokemon.facade";
 import { HttpError } from "../models/enum/http-errors.enum";
 import { wsMirroringRepository } from "../repositories/ws-mirroring.repository";
+import { cache } from "../services/cache";
 import { logger } from "../services/logger";
 import { endpoint, hostBaseUrl } from "../utils/http-utils";
 
-const NodeCache = require('node-cache');
-
 const router = Router();
-const cache = new NodeCache();
 const pokemonFacade = new PokemonFacade();
 
 router.get("/pokemon", async (req: Request, res: Response) => {
@@ -28,7 +25,7 @@ router.get("/pokemon", async (req: Request, res: Response) => {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
             const data = await pokemonFacade.getPokemonList(hostBaseUrl(req), endp, language);
-            cache.set(cacheKey, data, configuration.CACHE_TIMEOUT * 60);
+            cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
@@ -52,7 +49,7 @@ router.get("/pokemon/:id", async (req: Request, res: Response) => {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
             const data = await pokemonFacade.getPokemonDetail(hostBaseUrl(req), endp, language);
-            cache.set(cacheKey, data, configuration.CACHE_TIMEOUT * 60);
+            cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
@@ -76,7 +73,7 @@ router.get("/pokemon-species/:id", async (req: Request, res: Response) => {
     } else {
         try {
             const data = await pokemonFacade.getPokemonSpeciesDetail(hostBaseUrl(req), endp, language);
-            cache.set(cacheKey, data, configuration.CACHE_TIMEOUT * 60);
+            cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
@@ -110,7 +107,7 @@ router.get("/*", async (req: Request, res: Response) => {
             const dataString = JSON.stringify(data).replace(new RegExp(process.env.POKEAPI_URL!, 'g'), hostBaseUrl(req));
             data = JSON.parse(dataString);
 
-            cache.set(cacheKey, data, configuration.CACHE_TIMEOUT * 60);
+            cache.set(cacheKey, data);
             res.json(data);
         } catch (error: any) {
             logger.error(error);
