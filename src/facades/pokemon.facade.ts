@@ -11,18 +11,18 @@ import { StatDetailWsDTO } from "../models/ws/stat-detail.ws.dto";
 import { TypeDetailWsDTO } from "../models/ws/type-detail.ws.dto";
 import { wsMirroringRepository } from "../repositories/ws-mirroring.repository";
 
+import { pokemonRepository } from "../repositories/pokemon.repository";
+import { cache } from "../services/cache";
 import "../utils/extensions/string.extension";
 
 export class PokemonFacade {
+    private static readonly OFFSET_FOR_POPULATING_DATA = 0;
+    private static readonly LIMIT_FOR_POPULATING_DATA = 20;
+
     public async getPokemonList(hostUrl: string, endpoint: string, language: string = 'en'): Promise<PaginationWsDTO<PokemonApiDTO[]>> {
         var resultList: PokemonApiDTO[] = [];
+        hostUrl = hostUrl + "/";
         endpoint = endpoint.startsWith("/") ? endpoint.substring(1) : endpoint;
-        
-        // const data = await wsMirroringRepository.getPokemonApiMirroredDataByEndpoint(endpoint);
-
-        // // Replace in response base urls with local server host url
-        // const dataString = JSON.stringify(data).replace(new RegExp(wsUrls.POKEAPI!, 'g'), hostUrl);
-        // const pokemonData: PaginationWsDTO<NameUrlWsDTO[]> = JSON.parse(dataString);
 
         const pokemonData: PaginationWsDTO<NameUrlWsDTO[]> = await wsMirroringRepository.getPokemonApiMirroredDataByEndpoint(endpoint);
 
@@ -31,6 +31,7 @@ export class PokemonFacade {
             var idThumbnailToReplace: string | undefined;
             var thumbnailExtension: string | undefined;
 
+            // Create base infos to deduce thumbnail urls
             if (pokemonData.results[0].url?.length) {
                 const firstResultDetail: PokemonDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemonData.results[0].url, { 'Accept-Language': language });
                 
@@ -41,82 +42,63 @@ export class PokemonFacade {
                 }
             }
 
+            // Get types of pokemons
+            const types = await this.getTypesOfPokemons(); // typesOfPokemons;
+            const namesAndDescriptionsOfPokemons = await this.getNamesAndDescriptionsOfPokemons() // namesAndDescriptionsOfPokemons;
+
             for (const pokemon of pokemonData!.results!) {
-                if (pokemon?.url) {
-                    var id: number | undefined;
-                    var name: string | undefined;
-                    var thumbnail: string | undefined;
-                    var description: string | undefined;
-                    var mainType: string | undefined;
-                    var otherTypes: string[] | undefined = undefined;
+                var id: number | undefined;
+                var name: string | undefined;
+                var thumbnail: string | undefined;
+                var description: string | undefined;
+                var mainType: string | undefined;
+                var otherTypes: string[] | undefined = undefined;
 
-                    // const pokemonDetail: PokemonDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemon.url, { 'Accept-Language': language });
-                    var urlToReplace = wsUrls.POKEAPI + endpoint;
+                var urlToReplace = wsUrls.POKEAPI + endpoint;
 
-                    if (pokemon?.url?.length) {
-                        var idString: string = pokemon!.url!.replace(urlToReplace, "");
-                        idString = idString.replace(/\//g, "");
-                        id = parseInt(idString);
-                    }
-
-                    if (id === null || id === undefined) {
-                        continue;
-                    }
-
-                    if (thumbnailBaseUrl?.length && idThumbnailToReplace?.length) {
-                        thumbnail = thumbnailBaseUrl.replace(idThumbnailToReplace, id + "." + thumbnailExtension);
-                    }
-
-                    // if (pokemonDetail?.types?.length && pokemonDetail.types[0].type?.name?.length) {
-                    //     mainType = pokemonDetail.types[0].type.name; 
-                    // }
-
-                    // if (pokemonDetail?.types?.length && pokemonDetail.types.length > 1) {
-                    //     const other = pokemonDetail?.types.slice(1);
-                    //     otherTypes = other.filter((typeData) => typeData?.type?.name?.length).map((typeData) => typeData!.type!.name!);
-                    // }
-
-                    // if (pokemonDetail?.species?.url) {
-                    //     const pokemonSpecies: SpeciesDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemonDetail.species.url, { 'Accept-Language': language });
-
-                    //     if (pokemonSpecies?.names?.length) {
-                    //         for (const names of pokemonSpecies.names) {
-                    //             if (names.language?.name === language) {
-                    //                 name = names.name;
-                    //             }
-                    //         }
-                    //     }
-                        
-                    //     if (pokemonSpecies?.flavor_text_entries?.length) {
-                    //         for (const descriptionData of pokemonSpecies.flavor_text_entries) {
-                    //             if (descriptionData.flavor_text != null &&
-                    //                 descriptionData.language?.name === language &&
-                    //                 descriptionData.version?.name === "lets-go-pikachu") {
-                    //                     description = descriptionData.flavor_text;
-                    //             }
-                    //         }
-                    //     }
-                    // }
-
-                    // if (id != undefined &&
-                    //     name != undefined &&
-                    //     thumbnail != undefined &&
-                    //     description != undefined &&
-                    //     name != null &&
-                    //     mainType != null &&
-                    //     thumbnail != null &&
-                    //     description != null) {
-                            resultList.push({
-                                id: id,
-                                name: name,
-                                description: description,
-                                "main-type": mainType,
-                                "other-types": otherTypes,
-                                thumbnail: thumbnail,
-                                url: pokemon.url,
-                            });
-                    // }
+                if (pokemon?.url?.length) {
+                    var idString: string = pokemon!.url!.replace(urlToReplace, "");
+                    idString = idString.replace(/\//g, "");
+                    id = parseInt(idString);
                 }
+
+                if (id === null || id === undefined) {
+                    continue;
+                }
+
+                if (thumbnailBaseUrl?.length && idThumbnailToReplace?.length) {
+                    thumbnail = thumbnailBaseUrl.replace(idThumbnailToReplace, id + "." + thumbnailExtension);
+                }
+
+                if (pokemon.name?.length && types[pokemon.name]?.length) {
+                    mainType = types[pokemon.name][0];
+
+                    if (types[pokemon.name].length > 1) {
+                        otherTypes = types[pokemon.name].slice(1);
+                    }
+
+                    name = namesAndDescriptionsOfPokemons[language][pokemon.name]["name"];
+                    description = namesAndDescriptionsOfPokemons[language][pokemon.name]["description"];
+                }
+
+                // if (id != undefined &&
+                //     name != undefined &&
+                //     thumbnail != undefined &&
+                //     description != undefined &&
+                //     name != null &&
+                //     mainType != null &&
+                //     thumbnail != null &&
+                //     description != null) {
+                        resultList.push({
+                            id: id,
+                            name: name,
+                            description: description,
+                            "main-type": mainType,
+                            "other-types": otherTypes,
+                            thumbnail: thumbnail,
+                            url: pokemon.url,
+                        });
+                // }
             }
         }
 
@@ -128,6 +110,87 @@ export class PokemonFacade {
         };
         
         return paginatedData;
+    }
+
+    public async getTypesOfPokemons(): Promise<{ [name: string]: string[] }> {
+        var types: { [name: string]: string[] } = {};
+
+        const pokemonData: PaginationWsDTO<NameUrlWsDTO[]> = await pokemonRepository.getPokemon(PokemonFacade.LIMIT_FOR_POPULATING_DATA, PokemonFacade.OFFSET_FOR_POPULATING_DATA);
+
+        if (pokemonData?.results?.length) {
+            for (const pokemon of pokemonData.results) {
+                if (pokemon?.name?.length && pokemon?.url?.length) {
+                    const pokemonDetail: PokemonDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemon.url);
+                    
+                    types[pokemon.name] = [];
+    
+                    if (pokemonDetail?.types?.length && pokemonDetail.types[0].type?.name?.length) {
+                        types[pokemon.name].push(pokemonDetail.types[0].type.name);
+                    }
+    
+                    if (pokemonDetail?.types?.length && pokemonDetail.types.length > 1) {
+                        const other = pokemonDetail?.types.slice(1);
+                        types[pokemon.name].push(...other.filter((typeData) => typeData?.type?.name?.length).map((typeData) => typeData!.type!.name!));
+                    }
+                }
+            }
+
+            cache.set("types", types);
+        }
+
+        return types;
+    }
+
+    public async getNamesAndDescriptionsOfPokemons(): Promise<{ [name: string]: any }> {
+        var data: { [name: string]: any } = {};
+
+        const pokemonSpecies: PaginationWsDTO<NameUrlWsDTO[]> = await pokemonRepository.getPokemonSpecies(PokemonFacade.LIMIT_FOR_POPULATING_DATA, PokemonFacade.OFFSET_FOR_POPULATING_DATA);
+
+        if (pokemonSpecies?.results?.length) {
+            for (const pokemon of pokemonSpecies.results) {
+                if (pokemon?.name?.length && pokemon?.url?.length) {
+                    const pokemonSpeciesDetail: SpeciesDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemon.url);
+
+                    if (pokemonSpeciesDetail?.names?.length) {
+                        for (const names of pokemonSpeciesDetail.names) {
+                            if (names.language?.name?.length && names.name?.length) {
+                                if (data[names.language.name] == null || data[names.language.name] == undefined) {
+                                    data[names.language.name] = {};
+                                }
+
+                                if (data[names.language.name][pokemon.name] == null || data[names.language.name][pokemon.name] == undefined) {
+                                    data[names.language.name][pokemon.name] = {};
+                                }
+
+                                data[names.language.name][pokemon.name]["name"] = names.name;
+                            }
+                        }
+                    }
+
+                    if (pokemonSpeciesDetail?.flavor_text_entries?.length) {
+                        for (const descriptionData of pokemonSpeciesDetail.flavor_text_entries) {
+                            if (descriptionData.flavor_text != null &&
+                                descriptionData.version?.name === "lets-go-pikachu" &&
+                                descriptionData.language?.name?.length) {
+                                if (data[descriptionData.language.name] == null || data[descriptionData.language.name] == undefined) {
+                                    data[descriptionData.language.name] = {};
+                                }
+
+                                if (data[descriptionData.language.name][pokemon.name] == null || data[descriptionData.language.name][pokemon.name] == undefined) {
+                                    data[descriptionData.language.name][pokemon.name] = {};
+                                }
+
+                                data[descriptionData.language.name][pokemon.name]["description"] = descriptionData.flavor_text;
+                            }
+                        }
+                    }
+                }
+            }
+
+            cache.set("namesAndDescriptions", data);
+        }
+
+        return data;
     }
 
     public async getPokemonDetail(hostUrl: string, endpoint: string, language: string = 'en'): Promise<PokemonDetailApiDTO> {

@@ -26,7 +26,7 @@ router.get("/pokemon", async (req: Request, res: Response) => {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
             const data = await pokemonFacade.getPokemonList(hostBaseUrl(req), endp, language);
-            cache.set(cacheKey, data);
+            // cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
@@ -43,14 +43,14 @@ router.get("/pokemon/:id", async (req: Request, res: Response) => {
 
     const cacheKey = encodeURI(endp + `+lang=${language}`);
     const cachedData = cache.get(cacheKey);
-    if (cachedData) {
-        logger.debug(`Data retrieved from cache with key ${cacheKey}`);
-        return res.json(cachedData);
-    } else {
+    // if (cachedData) {
+    //     logger.debug(`Data retrieved from cache with key ${cacheKey}`);
+    //     return res.json(cachedData);
+    // } else {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
             const data = await pokemonFacade.getPokemonDetail(hostBaseUrl(req), endp, language);
-            cache.set(cacheKey, data);
+            // cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
@@ -58,7 +58,7 @@ router.get("/pokemon/:id", async (req: Request, res: Response) => {
               .status(HttpError.InternalServerError)
               .send({error: "Internal Server Error", message: "An error occured during pokemon detail retrieve"});
         }
-    }
+    // }
 });
 
 router.get("/pokemon-species/:id", async (req: Request, res: Response) => {

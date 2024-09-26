@@ -1,0 +1,1 @@
+export const typesOfPokemons: { [name: string]: string[] } = {};

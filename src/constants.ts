@@ -10,5 +10,6 @@ export const wsUrls =  {
 };
 
 export const endpoints = {
-  POKEMON: "pokemon"
+  POKEMON: "pokemon",
+  POKEMON_SPECIES: "pokemon-species",
 };
