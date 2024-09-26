@@ -1,8 +1,9 @@
+import { wsUrls } from "../constants";
 import { requestor } from "../services/http-requestor";
 
 export const wsMirroringRepository = {
-    getMirroredDataByEndpoint: async <T>(endpoint: string, headers?: { [key: string]: string; }): Promise<T> => {
-        const url = process.env.POKEAPI_URL + "/" + endpoint;
+    getPokemonApiMirroredDataByEndpoint: async <T>(endpoint: string, headers?: { [key: string]: string; }): Promise<T> => {
+        const url = wsUrls.POKEAPI + endpoint;
         return await requestor.get(url, headers);
     },
 

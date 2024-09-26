@@ -5,6 +5,10 @@ export const configuration = {
   LOGGER_DATE_FORMAT: "DD-MM-YYYY HH:mm:ss Z",
 };
 
+export const wsUrls =  {
+  POKEAPI: "https://pokeapi.co/api/v2/"
+};
+
 export const endpoints = {
   POKEMON: "pokemon"
 };

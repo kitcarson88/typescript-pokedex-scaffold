@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import express, { Express } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import overridedRoutes from "./api/overrides.api";
+import { wsUrls } from "./constants";
 import { logger, logRequestAndResponse } from "./services/logger";
 
 const morgan = require("morgan");
@@ -32,7 +33,7 @@ app.use(express.json());
 app.use("/", overridedRoutes);
 
 const envProxy = createProxyMiddleware({
-  target: process.env.POKEAPI_URL,
+  target: wsUrls.POKEAPI,
   changeOrigin: true,
   ws: true,
 });

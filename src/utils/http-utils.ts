@@ -1,7 +1,8 @@
 import { Request } from "express";
+import { wsUrls } from "../constants";
 
-export function fullBeUrl(req: Request) {
-  return process.env.POKEAPI_URL + "/" + endpoint;
+export function fullPokemonBeUrl(req: Request) {
+  return wsUrls.POKEAPI + "/" + endpoint;
 }
 
 export function fullHostUrl(req: Request) {
