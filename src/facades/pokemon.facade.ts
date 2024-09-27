@@ -13,27 +13,25 @@ import { wsMirroringRepository } from "../repositories/ws-mirroring.repository";
 
 import { namesAndDescriptionsOfPokemons } from "../mirrored-data/names-and-descriptions-of-pokemons";
 import { typesOfPokemons } from "../mirrored-data/types-of-pokemons";
-import { pokemonRepository } from "../repositories/pokemon.repository";
-import { cache } from "../services/cache";
 import "../utils/extensions/string.extension";
 
 export class PokemonFacade {
-    private static readonly OFFSET_FOR_POPULATING_DATA = 0;
-    private static readonly LIMIT_FOR_POPULATING_DATA = 3000;
+    // private static readonly OFFSET_FOR_POPULATING_DATA = 0;
+    // private static readonly LIMIT_FOR_POPULATING_DATA = 3000;
 
     public async getPokemonList(hostUrl: string, endpoint: string, language: string = 'en'): Promise<PaginationWsDTO<PokemonApiDTO[]>> {
-        var resultList: PokemonApiDTO[] = [];
+        let resultList: PokemonApiDTO[] = [];
         hostUrl = hostUrl + "/";
         endpoint = endpoint.startsWith("/") ? endpoint.substring(1) : endpoint;
-        var queryString = endpoint.includes("?") ? endpoint.substring(endpoint.indexOf("?") ) : "";
+        let queryString = endpoint.includes("?") ? endpoint.substring(endpoint.indexOf("?") ) : "";
         endpoint = endpoint.includes("?") ? endpoint.substring(0, endpoint.indexOf("?")) : endpoint;
 
         const pokemonData: PaginationWsDTO<NameUrlWsDTO[]> = await wsMirroringRepository.getPokemonApiMirroredDataByEndpoint(endpoint + queryString);
 
         if (pokemonData?.results?.length) {
-            var thumbnailBaseUrl: string | undefined;
-            var idThumbnailToReplace: string | undefined;
-            var thumbnailExtension: string | undefined;
+            let thumbnailBaseUrl: string | undefined;
+            let idThumbnailToReplace: string | undefined;
+            let thumbnailExtension: string | undefined;
 
             // Create base infos to deduce thumbnail urls
             if (pokemonData.results[0].url?.length) {
@@ -51,23 +49,27 @@ export class PokemonFacade {
             const namesAndDescriptions =  namesAndDescriptionsOfPokemons; // await this.getNamesAndDescriptionsOfPokemons();
 
             for (const pokemon of pokemonData!.results!) {
-                var id: number | undefined;
-                var name: string | undefined;
-                var thumbnail: string | undefined;
-                var description: string | undefined;
-                var mainType: string | undefined;
-                var otherTypes: string[] | undefined = undefined;
+                let id: number | undefined;
+                let name: string | undefined;
+                let thumbnail: string | undefined;
+                let description: string | undefined;
+                let mainType: string | undefined;
+                let otherTypes: string[] | undefined = undefined;
 
-                var urlToReplace = wsUrls.POKEAPI + endpoint;
+                let urlToReplace = wsUrls.POKEAPI + endpoint;
 
                 if (pokemon?.url?.length) {
-                    var idString: string = pokemon!.url!.replace(urlToReplace, "");
+                    let idString: string = pokemon!.url!.replace(urlToReplace, "");
                     idString = idString.replace(/\//g, "");
                     id = parseInt(idString);
                 }
 
                 if (id === null || id === undefined) {
                     continue;
+                }
+
+                if (id > 9999) {    //After 9999 there are only id of pokemon forms
+                    break;
                 }
 
                 if (thumbnailBaseUrl?.length && idThumbnailToReplace?.length) {
@@ -129,86 +131,86 @@ export class PokemonFacade {
         return paginatedData;
     }
 
-    public async getTypesOfPokemons(): Promise<{ [name: string]: string[] }> {
-        var types: { [name: string]: string[] } = {};
+    // public async getTypesOfPokemons(): Promise<{ [name: string]: string[] }> {
+    //     let types: { [name: string]: string[] } = {};
 
-        const pokemonData: PaginationWsDTO<NameUrlWsDTO[]> = await pokemonRepository.getPokemon(PokemonFacade.LIMIT_FOR_POPULATING_DATA, PokemonFacade.OFFSET_FOR_POPULATING_DATA);
+    //     const pokemonData: PaginationWsDTO<NameUrlWsDTO[]> = await pokemonRepository.getPokemon(PokemonFacade.LIMIT_FOR_POPULATING_DATA, PokemonFacade.OFFSET_FOR_POPULATING_DATA);
 
-        if (pokemonData?.results?.length) {
-            for (const pokemon of pokemonData.results) {
-                if (pokemon?.name?.length && pokemon?.url?.length) {
-                    const pokemonDetail: PokemonDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemon.url);
+    //     if (pokemonData?.results?.length) {
+    //         for (const pokemon of pokemonData.results) {
+    //             if (pokemon?.name?.length && pokemon?.url?.length) {
+    //                 const pokemonDetail: PokemonDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemon.url);
                     
-                    types[pokemon.name] = [];
+    //                 types[pokemon.name] = [];
     
-                    if (pokemonDetail?.types?.length && pokemonDetail.types[0].type?.name?.length) {
-                        types[pokemon.name].push(pokemonDetail.types[0].type.name);
-                    }
+    //                 if (pokemonDetail?.types?.length && pokemonDetail.types[0].type?.name?.length) {
+    //                     types[pokemon.name].push(pokemonDetail.types[0].type.name);
+    //                 }
     
-                    if (pokemonDetail?.types?.length && pokemonDetail.types.length > 1) {
-                        const other = pokemonDetail?.types.slice(1);
-                        types[pokemon.name].push(...other.filter((typeData) => typeData?.type?.name?.length).map((typeData) => typeData!.type!.name!));
-                    }
-                }
-            }
+    //                 if (pokemonDetail?.types?.length && pokemonDetail.types.length > 1) {
+    //                     const other = pokemonDetail?.types.slice(1);
+    //                     types[pokemon.name].push(...other.filter((typeData) => typeData?.type?.name?.length).map((typeData) => typeData!.type!.name!));
+    //                 }
+    //             }
+    //         }
 
-            cache.set("types", types);
-        }
+    //         cache.set("types", types);
+    //     }
 
-        return types;
-    }
+    //     return types;
+    // }
 
-    public async getNamesAndDescriptionsOfPokemons(): Promise<{ [name: string]: any }> {
-        var data: { [name: string]: any } = {};
+    // public async getNamesAndDescriptionsOfPokemons(): Promise<{ [name: string]: any }> {
+    //     let data: { [name: string]: any } = {};
 
-        const pokemonSpecies: PaginationWsDTO<NameUrlWsDTO[]> = await pokemonRepository.getPokemonSpecies(PokemonFacade.LIMIT_FOR_POPULATING_DATA, PokemonFacade.OFFSET_FOR_POPULATING_DATA);
+    //     const pokemonSpecies: PaginationWsDTO<NameUrlWsDTO[]> = await pokemonRepository.getPokemonSpecies(PokemonFacade.LIMIT_FOR_POPULATING_DATA, PokemonFacade.OFFSET_FOR_POPULATING_DATA);
 
-        if (pokemonSpecies?.results?.length) {
-            for (const pokemon of pokemonSpecies.results) {
-                if (pokemon?.name?.length && pokemon?.url?.length) {
-                    const pokemonSpeciesDetail: SpeciesDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemon.url);
+    //     if (pokemonSpecies?.results?.length) {
+    //         for (const pokemon of pokemonSpecies.results) {
+    //             if (pokemon?.name?.length && pokemon?.url?.length) {
+    //                 const pokemonSpeciesDetail: SpeciesDetailWsDTO = await wsMirroringRepository.getDataByUrl(pokemon.url);
 
-                    if (pokemonSpeciesDetail?.names?.length) {
-                        for (const names of pokemonSpeciesDetail.names) {
-                            if (names.language?.name?.length && names.name?.length) {
-                                if (data[names.language.name] == null || data[names.language.name] == undefined) {
-                                    data[names.language.name] = {};
-                                }
+    //                 if (pokemonSpeciesDetail?.names?.length) {
+    //                     for (const names of pokemonSpeciesDetail.names) {
+    //                         if (names.language?.name?.length && names.name?.length) {
+    //                             if (data[names.language.name] == null || data[names.language.name] == undefined) {
+    //                                 data[names.language.name] = {};
+    //                             }
 
-                                if (data[names.language.name][pokemon.name] == null || data[names.language.name][pokemon.name] == undefined) {
-                                    data[names.language.name][pokemon.name] = {};
-                                }
+    //                             if (data[names.language.name][pokemon.name] == null || data[names.language.name][pokemon.name] == undefined) {
+    //                                 data[names.language.name][pokemon.name] = {};
+    //                             }
 
-                                data[names.language.name][pokemon.name]["name"] = names.name;
-                            }
-                        }
-                    }
+    //                             data[names.language.name][pokemon.name]["name"] = names.name;
+    //                         }
+    //                     }
+    //                 }
 
-                    if (pokemonSpeciesDetail?.flavor_text_entries?.length) {
-                        for (const descriptionData of pokemonSpeciesDetail.flavor_text_entries) {
-                            if (descriptionData.flavor_text != null &&
-                                descriptionData.version?.name === "lets-go-pikachu" &&
-                                descriptionData.language?.name?.length) {
-                                if (data[descriptionData.language.name] == null || data[descriptionData.language.name] == undefined) {
-                                    data[descriptionData.language.name] = {};
-                                }
+    //                 if (pokemonSpeciesDetail?.flavor_text_entries?.length) {
+    //                     for (const descriptionData of pokemonSpeciesDetail.flavor_text_entries) {
+    //                         if (descriptionData.flavor_text != null &&
+    //                             // descriptionData.version?.name === "lets-go-pikachu" &&
+    //                             descriptionData.language?.name?.length) {
+    //                             if (data[descriptionData.language.name] == null || data[descriptionData.language.name] == undefined) {
+    //                                 data[descriptionData.language.name] = {};
+    //                             }
 
-                                if (data[descriptionData.language.name][pokemon.name] == null || data[descriptionData.language.name][pokemon.name] == undefined) {
-                                    data[descriptionData.language.name][pokemon.name] = {};
-                                }
+    //                             if (data[descriptionData.language.name][pokemon.name] == null || data[descriptionData.language.name][pokemon.name] == undefined) {
+    //                                 data[descriptionData.language.name][pokemon.name] = {};
+    //                             }
 
-                                data[descriptionData.language.name][pokemon.name]["description"] = descriptionData.flavor_text;
-                            }
-                        }
-                    }
-                }
-            }
+    //                             data[descriptionData.language.name][pokemon.name]["description"] = descriptionData.flavor_text;
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
 
-            cache.set("namesAndDescriptions", data);
-        }
+    //         cache.set("namesAndDescriptions", data);
+    //     }
 
-        return data;
-    }
+    //     return data;
+    // }
 
     public async getPokemonDetail(hostUrl: string, endpoint: string, language: string = 'en'): Promise<PokemonDetailApiDTO> {
         const data = await wsMirroringRepository.getPokemonApiMirroredDataByEndpoint(endpoint);

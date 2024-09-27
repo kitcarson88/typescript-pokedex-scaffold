@@ -7,7 +7,7 @@ export const pokemonRepository = {
     getPokemon: async (limit?: number | string, offset?: number | string): Promise<PaginationWsDTO<NameUrlWsDTO[]>> => {
         const url = wsUrls.POKEAPI + endpoints.POKEMON;
         
-        var queryParams: {[key: string]: string} | undefined = {};
+        let queryParams: {[key: string]: string} | undefined = {};
         
         if (limit != undefined && limit != null) {
             queryParams["limit"] = limit!.toString();
@@ -22,7 +22,7 @@ export const pokemonRepository = {
     getPokemonSpecies: async (limit?: number | string, offset?: number | string): Promise<PaginationWsDTO<NameUrlWsDTO[]>> => {
         const url = wsUrls.POKEAPI + endpoints.POKEMON_SPECIES;
         
-        var queryParams: {[key: string]: string} | undefined = {};
+        let queryParams: {[key: string]: string} | undefined = {};
         
         if (limit != undefined && limit != null) {
             queryParams["limit"] = limit!.toString();
