@@ -1,6 +1,6 @@
 {
   "name": "pokedex-api",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Node js pokedex api",
   "main": "dist/index.js",
   "scripts": {
