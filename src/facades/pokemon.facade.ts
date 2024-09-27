@@ -11,20 +11,24 @@ import { StatDetailWsDTO } from "../models/ws/stat-detail.ws.dto";
 import { TypeDetailWsDTO } from "../models/ws/type-detail.ws.dto";
 import { wsMirroringRepository } from "../repositories/ws-mirroring.repository";
 
+import { namesAndDescriptionsOfPokemons } from "../mirrored-data/names-and-descriptions-of-pokemons";
+import { typesOfPokemons } from "../mirrored-data/types-of-pokemons";
 import { pokemonRepository } from "../repositories/pokemon.repository";
 import { cache } from "../services/cache";
 import "../utils/extensions/string.extension";
 
 export class PokemonFacade {
     private static readonly OFFSET_FOR_POPULATING_DATA = 0;
-    private static readonly LIMIT_FOR_POPULATING_DATA = 20;
+    private static readonly LIMIT_FOR_POPULATING_DATA = 3000;
 
     public async getPokemonList(hostUrl: string, endpoint: string, language: string = 'en'): Promise<PaginationWsDTO<PokemonApiDTO[]>> {
         var resultList: PokemonApiDTO[] = [];
         hostUrl = hostUrl + "/";
         endpoint = endpoint.startsWith("/") ? endpoint.substring(1) : endpoint;
+        var queryString = endpoint.includes("?") ? endpoint.substring(endpoint.indexOf("?") ) : "";
+        endpoint = endpoint.includes("?") ? endpoint.substring(0, endpoint.indexOf("?")) : endpoint;
 
-        const pokemonData: PaginationWsDTO<NameUrlWsDTO[]> = await wsMirroringRepository.getPokemonApiMirroredDataByEndpoint(endpoint);
+        const pokemonData: PaginationWsDTO<NameUrlWsDTO[]> = await wsMirroringRepository.getPokemonApiMirroredDataByEndpoint(endpoint + queryString);
 
         if (pokemonData?.results?.length) {
             var thumbnailBaseUrl: string | undefined;
@@ -43,8 +47,8 @@ export class PokemonFacade {
             }
 
             // Get types of pokemons
-            const types = await this.getTypesOfPokemons(); // typesOfPokemons;
-            const namesAndDescriptionsOfPokemons = await this.getNamesAndDescriptionsOfPokemons() // namesAndDescriptionsOfPokemons;
+            const types =  typesOfPokemons; // await this.getTypesOfPokemons();
+            const namesAndDescriptions =  namesAndDescriptionsOfPokemons; // await this.getNamesAndDescriptionsOfPokemons();
 
             for (const pokemon of pokemonData!.results!) {
                 var id: number | undefined;
@@ -77,8 +81,21 @@ export class PokemonFacade {
                         otherTypes = types[pokemon.name].slice(1);
                     }
 
-                    name = namesAndDescriptionsOfPokemons[language][pokemon.name]["name"];
-                    description = namesAndDescriptionsOfPokemons[language][pokemon.name]["description"];
+                    if (
+                        namesAndDescriptions[language] != null && namesAndDescriptions[language] != undefined &&
+                        namesAndDescriptions[language][pokemon.name] != null && namesAndDescriptions[language][pokemon.name] != undefined &&
+                        namesAndDescriptions[language][pokemon.name]["name"] != null && namesAndDescriptions[language][pokemon.name]["name"] != undefined
+                    ) {
+                        name = namesAndDescriptions[language][pokemon.name]["name"];
+                    }
+
+                    if (
+                        namesAndDescriptions[language] != null && namesAndDescriptions[language] != undefined &&
+                        namesAndDescriptions[language][pokemon.name] != null && namesAndDescriptions[language][pokemon.name] != undefined &&
+                        namesAndDescriptions[language][pokemon.name]["description"] != null && namesAndDescriptions[language][pokemon.name]["description"] != undefined
+                    ) {
+                        description = namesAndDescriptions[language][pokemon.name]["description"];
+                    }
                 }
 
                 // if (id != undefined &&
