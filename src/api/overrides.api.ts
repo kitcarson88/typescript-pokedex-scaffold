@@ -1,4 +1,5 @@
 import { Request, Response, Router } from "express";
+import { wsUrls } from "../constants";
 import { PokemonFacade } from "../facades/pokemon.facade";
 import { HttpError } from "../models/enum/http-errors.enum";
 import { wsMirroringRepository } from "../repositories/ws-mirroring.repository";
@@ -25,7 +26,7 @@ router.get("/pokemon", async (req: Request, res: Response) => {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
             const data = await pokemonFacade.getPokemonList(hostBaseUrl(req), endp, language);
-            cache.set(cacheKey, data);
+            // cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
@@ -49,7 +50,7 @@ router.get("/pokemon/:id", async (req: Request, res: Response) => {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
             const data = await pokemonFacade.getPokemonDetail(hostBaseUrl(req), endp, language);
-            cache.set(cacheKey, data);
+            // cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
@@ -101,10 +102,10 @@ router.get("/*", async (req: Request, res: Response) => {
     } else {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
-            var data = await wsMirroringRepository.getMirroredDataByEndpoint(endp);
+            let data = await wsMirroringRepository.getPokemonApiMirroredDataByEndpoint(endp);
 
             // Replace in response base urls with local server host url
-            const dataString = JSON.stringify(data).replace(new RegExp(process.env.POKEAPI_URL!, 'g'), hostBaseUrl(req));
+            const dataString = JSON.stringify(data).replace(new RegExp(wsUrls.POKEAPI!, 'g'), hostBaseUrl(req));
             data = JSON.parse(dataString);
 
             cache.set(cacheKey, data);
