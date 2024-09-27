@@ -2,6 +2,7 @@
 import dotenv from "dotenv";
 import express, { Express } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import examplesRoutes from "./api/example.api";
 import overridedRoutes from "./api/overrides.api";
 import { wsUrls } from "./constants";
 import { logger, logRequestAndResponse } from "./services/logger";
@@ -30,6 +31,7 @@ app.use(
 /*************************************************/
 
 app.use(express.json());
+app.use("/examples", examplesRoutes);
 app.use("/", overridedRoutes);
 
 const envProxy = createProxyMiddleware({
