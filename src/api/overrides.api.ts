@@ -26,7 +26,7 @@ router.get("/pokemon", async (req: Request, res: Response) => {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
             const data = await pokemonFacade.getPokemonList(hostBaseUrl(req), endp, language);
-            // cache.set(cacheKey, data);
+            cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
@@ -50,7 +50,7 @@ router.get("/pokemon/:id", async (req: Request, res: Response) => {
         logger.debug(`No cache data found with key ${cacheKey}. Retrieve from original service`);
         try {
             const data = await pokemonFacade.getPokemonDetail(hostBaseUrl(req), endp, language);
-            // cache.set(cacheKey, data);
+            cache.set(cacheKey, data);
             res.json(data);
         } catch (error) {
             logger.error(error);
