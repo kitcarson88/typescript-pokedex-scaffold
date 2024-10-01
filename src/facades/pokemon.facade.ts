@@ -213,6 +213,9 @@ export class PokemonFacade {
     // }
 
     public async getPokemonDetail(hostUrl: string, endpoint: string, language: string = 'en'): Promise<PokemonDetailApiDTO> {
+        hostUrl = hostUrl + "/";
+        endpoint = endpoint.startsWith("/") ? endpoint.substring(1) : endpoint;
+
         const data = await wsMirroringRepository.getPokemonApiMirroredDataByEndpoint(endpoint);
 
         // Replace in response base urls with local server host url
